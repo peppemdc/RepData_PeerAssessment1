@@ -4,22 +4,69 @@ output:
   html_document:
     keep_md: true
 ---
-
-
 ## Loading and preprocessing the data
 
+```{r}
+#downloading files
+if(!file.exists("./data")){dir.create("./data")}
+fileUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+download.file(fileUrl,destfile="./data/repdata_data_activity",method="auto")
+unzip(zipfile="./data/repdata_data_activity",exdir="./data")
+df<-read.csv('activity.csv')
 
+```
 
 ## What is mean total number of steps taken per day?
 
+```{r}
+steps_per_day <- aggregate(steps ~ date,df, sum)
+hist(steps_per_day$steps,xlab='Steps per day',main='Histogram of steps per day')
 
+step_mean<-mean(steps_per_day$steps)
+step_mean
 
+step_median<-median(steps_per_day$steps)
+step_median
+```
 ## What is the average daily activity pattern?
+```{r}
+steps_per_interval<-aggregate(steps ~ interval,df, mean)
+plot(main='Average daily steps for each interval',steps_per_interval$interval,steps_per_interval$steps,type='l')
 
-
-
+max_interval<-steps_per_interval[which.max(steps_per_interval$steps),1]
+max_interval
+```
 ## Imputing missing values
+```{r}
+df1<-df
+incomplete <- sum(!complete.cases(df))
+incomplete
+#MISSING VALUES REPLACED BY THE MEAN
+df1[is.na(df1[,1]), 1] <- mean(df1[,1], na.rm = TRUE)
+steps_per_day_1 <- aggregate(steps ~ date,df1, sum)
+hist(steps_per_day_1$steps,xlab='Steps per day',main='Histogram of steps per day')
 
+step_mean1 <- mean(steps_per_day_1$steps)
+step_median1 <- median(steps_per_day_1$steps)
 
-
+mean_diff <- step_mean1 - step_mean
+mean_diff
+median_diff <- step_median1 - step_median
+median_diff
+total_diff <- sum(steps_per_day_1$steps) - sum(steps_per_day$steps)
+total_diff
+```
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+
+
+
+weekends <- c("sabato","domenica")
+df1$dow = as.factor(ifelse(is.element(weekdays(as.Date(df1$date)),weekends), "Weekend","Weekday"))
+
+steps_by_interval_1 <- aggregate(steps ~ interval + dow, df1, mean)
+
+library(lattice)
+
+xyplot(steps_by_interval_1$steps ~ steps_by_interval_1$interval|steps_by_interval_1$dow, main="Average Steps per Day by Interval",xlab="Interval", ylab="Steps",layout=c(1,2), type="l")
+```
